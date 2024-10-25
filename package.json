@@ -1,0 +1,34 @@
+{
+  "name": "ui-common",
+  "version": "0.0.1",
+  "description": "UI Utilities",
+  "main": "./lib/index.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build:lib": "tsc",
+    "clean:lib": "rimraf lib"
+  },
+  "devDependencies": {
+    "tslint": "5.10.0",
+    "typescript": "^3.3.3333",
+    "validation-core": "^0.0.3"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/content-system/ui-common"
+  },
+  "keywords": [
+    "ui",
+    "util",
+    "ui-util",
+    "ui util",
+    "utilities",
+    "ui utilities",
+    "ui-utilities",
+    "ui-plus",
+    "ui plus"
+  ]
+}
