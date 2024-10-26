@@ -158,34 +158,7 @@ function toggleSearch(e: Event) {
     p.classList.toggle("search")
   }
 }
-/*
-function getFirstPath(url: string): string {
-  const s = url.substring(8)
-  const i = s.indexOf("/")
-  if (i < 0 || s.length - i <= 1) {
-    return "/"
-  }
-  const j = s.indexOf("/", i + 1)
-  if (j > 0) {
-    return s.substring(i, j)
-  } else {
-    return s.substring(i)
-  }
-}
-function navOnLoad() {
-  const target = document.getElementById("sysNav") as HTMLElement
-  const firstPath = getFirstPath(getCurrentURL())
-  const activePath = window.location.origin + firstPath
-  const elA = target.querySelectorAll("a")
-  const l = elA.length
-  for (let i = 0; i < l; i++) {
-    if (elA[i].href === activePath) {
-      elA[i].parentElement?.classList.add("active")
-      return
-    }
-  }
-}
-*/
+
 function navigate(e: Event) {
   e.preventDefault()
   const target = e.target as HTMLElement
@@ -444,4 +417,33 @@ function submitContact(e: Event) {
       console.log("Error: " + err)
       alert("An error occurred while submitting the form")
     })
+}
+
+function getFirstPath(url: string): string {
+  const s = url.substring(8)
+  const i = s.indexOf("/")
+  if (i < 0 || s.length - i <= 1) {
+    return "/"
+  }
+  const j = s.indexOf("/", i + 1)
+  if (j > 0) {
+    return s.substring(i, j)
+  } else {
+    return s.substring(i)
+  }
+}
+window.onload = function () {
+  setTimeout(function () {
+    const target = document.getElementById("sysNav") as HTMLElement
+    const firstPath = getFirstPath(window.location.origin + window.location.pathname)
+    const activePath = window.location.origin + firstPath
+    const elA = target.querySelectorAll("a")
+    const l = elA.length
+    for (let i = 0; i < l; i++) {
+      if (elA[i].href === activePath) {
+        elA[i].parentElement?.classList.add("active")
+        return
+      }
+    }
+  }, 50)
 }
