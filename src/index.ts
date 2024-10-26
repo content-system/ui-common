@@ -1,5 +1,6 @@
 const r1 = / |,|\$|€|£|¥|'|٬|،| /g
 const r2 = / |\.|\$|€|£|¥|'|٬|،| /g
+const defaultLimit = 24
 
 interface Locale {
   decimalSeparator: string
@@ -161,15 +162,15 @@ function decodeFromForm<T>(form: HTMLFormElement, locale?: Locale, currencySymbo
     const id = ctrl.getAttribute("id")
     let val: any
     let isDate = false
-    if (!name || name === "") {
-      let dataField = ctrl.getAttribute("data-field")
-      if (!dataField && ctrl.parentElement && ctrl.parentElement.classList.contains("DayPickerInput")) {
-        if (ctrl.parentElement.parentElement) {
-          dataField = ctrl.parentElement.parentElement.getAttribute("data-field")
-          isDate = true
-        }
-      }
+    let dataField = ctrl.getAttribute("data-field")
+    if (dataField && dataField.length > 0) {
       name = dataField
+    } else if ((!name || name === "") && ctrl.parentElement && ctrl.parentElement.classList.contains("DayPickerInput")) {
+      if (ctrl.parentElement.parentElement) {
+        dataField = ctrl.parentElement.parentElement.getAttribute("data-field")
+        isDate = true
+        name = dataField
+      }
     }
     if (name != null && name !== "") {
       let nodeName = ctrl.nodeName
@@ -220,7 +221,7 @@ function decodeFromForm<T>(form: HTMLFormElement, locale?: Locale, currencySymbo
           case "datetime-local":
             if (ctrl.value.length > 0) {
               try {
-                val = new Date(ctrl.value).toISOString() // DateUtil.parse(ctrl.value, 'YYYY-MM-DD');
+                val = new Date(ctrl.value) // DateUtil.parse(ctrl.value, 'YYYY-MM-DD');
               } catch (err) {
                 val = null
               }
@@ -263,4 +264,165 @@ function decodeFromForm<T>(form: HTMLFormElement, locale?: Locale, currencySymbo
     }
   }
   return obj
+}
+
+function removeFormatUrl(url: string): string {
+  const startParams = url.indexOf("?")
+  return startParams !== -1 ? url.substring(0, startParams) : url
+}
+interface Filter {
+  page?: number
+  limit?: number
+  firstLimit?: number
+  fields?: string[]
+  sort?: string
+}
+function buildUrl<F extends Filter>(ft: F, fields?: string, limit?: string): string {
+  if (!fields || fields.length === 0) {
+    fields = "fields"
+  }
+  if (!limit || limit.length === 0) {
+    limit = "limit"
+  }
+  const pageIndex = ft.page
+  if (pageIndex && !isNaN(pageIndex) && pageIndex <= 1) {
+    delete ft.page
+  }
+  const keys = Object.keys(ft)
+  const currentUrl = window.location.host + window.location.pathname
+  let url = removeFormatUrl(currentUrl) + "?partial=true"
+  for (const key of keys) {
+    const objValue = (ft as any)[key]
+    if (objValue) {
+      if (key !== fields) {
+        if (typeof objValue === "string" || typeof objValue === "number") {
+          if (key === limit) {
+            if (objValue !== defaultLimit) {
+              if (url.indexOf("?") === -1) {
+                url += `?${key}=${objValue}`
+              } else {
+                url += `&${key}=${objValue}`
+              }
+            }
+          } else {
+            if (url.indexOf("?") === -1) {
+              url += `?${key}=${objValue}`
+            } else {
+              url += `&${key}=${objValue}`
+            }
+          }
+        } else if (typeof objValue === "object") {
+          if (objValue instanceof Date) {
+            if (url.indexOf("?") === -1) {
+              url += `?${key}=${objValue.toISOString()}`
+            } else {
+              url += `&${key}=${objValue.toISOString()}`
+            }
+          } else {
+            if (Array.isArray(objValue)) {
+              if (objValue.length > 0) {
+                const strs: string[] = []
+                for (const subValue of objValue) {
+                  if (typeof subValue === "string") {
+                    strs.push(subValue)
+                  } else if (typeof subValue === "number") {
+                    strs.push(subValue.toString())
+                  }
+                }
+                if (url.indexOf("?") === -1) {
+                  url += `?${key}=${strs.join(",")}`
+                } else {
+                  url += `&${key}=${strs.join(",")}`
+                }
+              }
+            } else {
+              const keysLvl2 = Object.keys(objValue)
+              for (const key2 of keysLvl2) {
+                const objValueLvl2 = objValue[key2]
+                if (url.indexOf("?") === -1) {
+                  if (objValueLvl2 instanceof Date) {
+                    url += `?${key}.${key2}=${objValueLvl2.toISOString()}`
+                  } else {
+                    url += `?${key}.${key2}=${objValueLvl2}`
+                  }
+                } else {
+                  if (objValueLvl2 instanceof Date) {
+                    url += `&${key}.${key2}=${objValueLvl2.toISOString()}`
+                  } else {
+                    url += `&${key}.${key2}=${objValueLvl2}`
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  let p = "http://"
+  const loc = window.location.href
+  if (loc.length >= 8) {
+    const ss = loc.substring(0, 8)
+    if (ss === "https://") {
+      p = "https://"
+    }
+  }
+  return p + url
+}
+
+function searchNews(e: Event) {
+  e.preventDefault()
+  const target = e.target as HTMLButtonElement
+  const form = target.form as HTMLFormElement
+  const filter = decodeFromForm(form)
+  const url = buildUrl(filter as any)
+  fetch(url, {
+    method: "GET",
+  })
+    .then((response) => {
+      if (response.ok) {
+        response.text().then((data) => {
+          const pageBody = document.getElementById("pageBody")
+          if (pageBody) {
+            pageBody.innerHTML = data
+          }
+        })
+      } else {
+        console.error("Error:", response.statusText)
+        alert("Failed to submit data.")
+      }
+    })
+    .catch((err) => {
+      console.log("Error: " + err)
+      alert("An error occurred while submitting the form")
+    })
+}
+function submitContact(e: Event) {
+  e.preventDefault()
+  const target = e.target as HTMLButtonElement
+  const form = target.form as HTMLFormElement
+  const contact = decodeFromForm(form)
+  const url = getCurrentURL()
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json", // Ensure the server understands the content type
+    },
+    body: JSON.stringify(contact), // Convert the form data to JSON format
+  })
+    .then((response) => {
+      if (response.ok) {
+        response.text().then((data) => {
+          console.log("Success:", data)
+          alert("Data submitted successfully!")
+        })
+      } else {
+        console.error("Error:", response.statusText)
+        alert("Failed to submit data.")
+      }
+    })
+    .catch((err) => {
+      console.log("Error: " + err)
+      alert("An error occurred while submitting the form")
+    })
 }
