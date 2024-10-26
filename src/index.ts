@@ -136,22 +136,56 @@ function toggleClass(e: HTMLElement | null | undefined, className: string): bool
 
 function changeMenu() {
   const body = document.getElementById("sysBody")
-  toggleClass(body, "top-menu")
+  if (body) {
+    body.classList.toggle("top-menu")
+  }
 }
 function changeMode() {
   const body = document.getElementById("sysBody")
-  toggleClass(body?.parentElement, "dark")
+  if (body) {
+    body.classList.toggle("dark")
+  }
 }
 function toggleMenu(e: Event) {
   const p = findParent(e.target as HTMLElement, "sidebar-parent")
-  toggleClass(p, "menu-on")
+  if (p) {
+    p.classList.toggle("menu-on")
+  }
 }
 function toggleSearch(e: Event) {
   const p = findParent(e.target as HTMLElement, "sidebar-parent")
   if (p) {
-    toggleClass(p, "search")
+    p.classList.toggle("search")
   }
 }
+/*
+function getFirstPath(url: string): string {
+  const s = url.substring(8)
+  const i = s.indexOf("/")
+  if (i < 0 || s.length - i <= 1) {
+    return "/"
+  }
+  const j = s.indexOf("/", i + 1)
+  if (j > 0) {
+    return s.substring(i, j)
+  } else {
+    return s.substring(i)
+  }
+}
+function navOnLoad() {
+  const target = document.getElementById("sysNav") as HTMLElement
+  const firstPath = getFirstPath(getCurrentURL())
+  const activePath = window.location.origin + firstPath
+  const elA = target.querySelectorAll("a")
+  const l = elA.length
+  for (let i = 0; i < l; i++) {
+    if (elA[i].href === activePath) {
+      elA[i].parentElement?.classList.add("active")
+      return
+    }
+  }
+}
+*/
 function navigate(e: Event) {
   e.preventDefault()
   const target = e.target as HTMLElement
@@ -169,6 +203,17 @@ function navigate(e: Event) {
               const span = link.querySelector("span")
               const title = span ? span.innerText : link.innerText
               window.history.pushState({ pageTitle: title }, "", url)
+              const parent = findParentNode(target, "LI")
+              if (parent) {
+                const nav = findParentNode(parent, "NAV")
+                if (nav) {
+                  const elI = nav.querySelector(".active")
+                  if (elI) {
+                    elI.classList.remove("active")
+                  }
+                }
+                parent.classList.add("active")
+              }
             }
             hideLoading()
           })
@@ -189,23 +234,23 @@ function toggleMenuItem(e: Event) {
   let target = e.target as HTMLElement
   const nul = target.nextElementSibling
   if (nul) {
-    const elI = target.querySelectorAll(".menu-item > i.entity-icon")
-    if (nul.classList.contains("expanded")) {
-      nul.classList.remove("expanded")
-      if (elI && elI.length > 0) {
-        elI[0].classList.add("up")
-        elI[0].classList.remove("down")
-      }
-    } else {
-      nul.classList.add("expanded")
-      if (elI && elI.length > 0) {
-        elI[0].classList.remove("up")
-        elI[0].classList.add("down")
+    const elI = target.querySelector(".menu-item > i.entity-icon")
+    if (elI) {
+      if (nul.classList.contains("expanded")) {
+        nul.classList.remove("expanded")
+        elI.classList.add("up")
+        elI.classList.remove("down")
+      } else {
+        nul.classList.add("expanded")
+        elI.classList.remove("up")
+        elI.classList.add("down")
       }
     }
   }
   const parent = findParentNode(target, "LI")
-  toggleClass(parent, "open")
+  if (parent) {
+    parent.classList.toggle("open")
+  }
 }
 
 function valueOf(obj: any, key: string): any {
